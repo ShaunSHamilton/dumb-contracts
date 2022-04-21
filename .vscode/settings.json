@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "blockchain/Cargo.toml",
+    "dumb-contract/Cargo.toml"
+  ]
+}
