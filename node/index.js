@@ -1,16 +1,50 @@
 import fs from "fs/promises";
+import * as blockchain from "../blockchain/pkg/blockchain.js";
+import web3 from "../web3/index.js";
+import http from "http";
+import { WebSocketServer } from "ws";
 
-async function test() {
-  // import { mine_block } from "../blockchain/pkg/blockchain.js";
+const server = http.createServer();
 
-  const smartContractByteCodeFromBlockchain = await getSmartContractById(0)
-    .byte_code;
-  WebAssembly.instantiate(smartContractByteCodeFromBlockchain).then(
-    (wasmModule) => {
-      console.log(wasmModule);
-    }
-  );
-}
+web3.setProvider(server);
+
+const wss = new WebSocketServer({ server });
+
+wss.on("connection", (ws) => {
+  // web3.shh.subscribe(
+  //   "messages",
+  //   {
+  //     symKeyID: "a",
+  //     sig: "0x0",
+  //     ttl: 200000,
+  //     topics: ["chain"],
+  //     minPow: 0.8,
+  //   },
+  //   function (error, message, subscription) {
+  //     console.log("Error: ", error);
+  //     console.log("Message: ", message);
+  //     console.log("Subscription: ", subscription);
+  //   }
+  // );
+  web3.shh.net.isListening((a, b) => {
+    console.log(a, b);
+    console.log("Listening to the whisper protocol");
+  });
+  ws.on("message", (message) => {
+    console.log("received: %s", message);
+    // If message is to run a smart contract, do so, and add fee to the transactionPool
+  });
+
+  ws.on("error", (error) => {
+    console.error(error);
+  });
+  ws.on("close", () => {
+    console.warn("Connection closed");
+  });
+
+  ws.send("connected");
+});
+
 export async function getChain() {
   // Open chain from ./chain.json
   const chain = await fs.readFile("./chain.json", "utf8");
@@ -36,3 +70,8 @@ export async function transact(data) {
   transactions.push(data);
   await fs.writeFile("./transactions.json", JSON.stringify(transactions));
 }
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 http://localhost:${PORT}`);
+});

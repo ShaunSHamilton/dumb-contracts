@@ -1,20 +1,30 @@
-// Deploy the dumb-contract to the blockchain.
 import fs from "fs/promises";
-// import { transact } from "../blockchain/pkg/blockchain.js";
 import { transact } from "./index.js";
 import { addSmartContract } from "./transactions.js";
 
+const CONTRACT_OWNER = process.argv[2];
+const PATH_TO_CONTRACT = process.argv[3];
+
+if (!CONTRACT_OWNER) {
+  throw new Error("No contract owner provided");
+}
+if (!PATH_TO_CONTRACT) {
+  throw new Error("No path to contract provided");
+}
+
+console.log(`🔵 Deploying '${PATH_TO_CONTRACT}' as ${CONTRACT_OWNER}`);
+
 try {
-  const byteCode = await fs.readFile(
-    "./dumb-contract/pkg/dumb_contract_bg.wasm"
-  );
+  const byteCode = await fs.readFile(PATH_TO_CONTRACT);
   transact(
     addSmartContract({
       byte_code: byteCode.toJSON().data,
-      base_account: "Camper",
+      base_account: CONTRACT_OWNER,
     })
   );
+  console.log(`✅ Deployed ${PATH_TO_CONTRACT}`);
 } catch (e) {
+  console.log(`❌ Failed to deploy ${PATH_TO_CONTRACT}\n\n`);
   console.error(e);
 }
 
