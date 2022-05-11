@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { transact } from "./index.js";
+import { transact } from "./transactions.js";
 import { addSmartContract } from "./transactions.js";
 
 const CONTRACT_OWNER = process.argv[2];

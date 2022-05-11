@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "id": 7,
+  "instructions": [
+    {
+      "handle": "add",
+      "args": [
+        {
+          "parameter": "a",
+          "type": "f32"
+        },
+        {
+          "parameter": "b",
+          "type": "f32"
+        }
+      ]
+    },
+    {
+      "handle": "expense",
+      "args": [
+        {
+          "parameter": "a",
+          "type": "u32"
+        }
+      ]
+    }
+  ]
+}

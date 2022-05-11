@@ -1,16 +1,34 @@
+use crate::account::Account;
 use crate::block::{Block, Data};
 use crate::{calculate_hash, hash_to_binary, DIFFICULTY_PREFIX};
 
 use chrono;
 
-type Chain = Vec<Block>;
+pub type Chain = Vec<Block>;
 
 impl ChainTrait for Chain {
     fn get_last_block(&self) -> Option<&Block> {
         self.last()
     }
 
-    fn mine_block(&mut self, data: Data) -> Result<(), String> {
+    fn get_account_by_address(&self, address: &str) -> Option<&Account> {
+        // Search Chain data in reverse
+        for block in self.iter().rev() {
+            for node in block.data.accounts.iter() {
+                if node.address == address {
+                    return Some(node);
+                }
+            }
+        }
+        None
+    }
+
+    fn get_num_smart_contracts(&self) -> u64 {
+        self.iter().fold(0, |acc, block| {
+            acc + block.data.smart_contracts.len() as u64
+        })
+    }
+    fn mine_block(&mut self, data: Data) {
         println!("\nMining Block...");
         let mut nonce = 0;
 
@@ -36,7 +54,7 @@ impl ChainTrait for Chain {
                     nonce,
                 };
                 self.push(new_block);
-                break Ok(());
+                break;
             }
             nonce += 1;
         }
@@ -45,5 +63,7 @@ impl ChainTrait for Chain {
 
 pub trait ChainTrait {
     fn get_last_block(&self) -> Option<&Block>;
-    fn mine_block(&mut self, data: Data) -> Result<(), String>;
+    fn mine_block(&mut self, data: Data);
+    fn get_account_by_address(&self, address: &str) -> Option<&Account>;
+    fn get_num_smart_contracts(&self) -> u64;
 }

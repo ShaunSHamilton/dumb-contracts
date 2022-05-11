@@ -3,7 +3,9 @@ pub mod block;
 pub mod chain;
 pub mod smart_contract;
 
+use account::Account;
 use block::Data;
+use chain::{Chain, ChainTrait};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use sha2::{Digest, Sha256};
@@ -28,10 +30,62 @@ pub enum Transactions {
 }
 
 #[wasm_bindgen]
-pub fn mine_block(transactions: JsValue) -> Result<(), JsError> {
+pub fn mine_block(chain: JsValue, transactions: JsValue) -> Result<JsValue, JsError> {
+    let mut chain: Chain = chain.into_serde()?;
     let transactions: Vec<Transactions> = transactions.into_serde()?;
-    for _transaction in transactions {}
-    Ok(())
+
+    let mut data: Data = Data {
+        accounts: vec![],
+        smart_contracts: vec![],
+    };
+
+    // If genesis, start with system account
+    if chain.is_empty() {
+        data.accounts.push(Account {
+            address: "0".to_string(),
+            balance: 1_000_000_000_000_000_000,
+        });
+    }
+
+    for transaction in transactions {
+        match transaction {
+            Transactions::AddAccount(account) => {
+                data.accounts.push(Account {
+                    address: account,
+                    balance: 0,
+                });
+            }
+            Transactions::AddSmartContract(mut smart_contract) => {
+                smart_contract.id = Some(chain.get_num_smart_contracts());
+                data.smart_contracts.push(smart_contract);
+            }
+            Transactions::Transfer(transfer) => {
+                if let Some(from_account) = chain.get_account_by_address(&transfer.from) {
+                    let mut from_account = from_account.clone();
+                    if from_account.can_transfer(&transfer.amount) {
+                        if let Some(to_account) = chain.get_account_by_address(&transfer.to) {
+                            let mut to_account = to_account.clone();
+
+                            from_account.balance -= transfer.amount;
+                            to_account.balance += transfer.amount;
+
+                            data.accounts.push(from_account);
+                            data.accounts.push(to_account);
+                        } else {
+                            // To account does not exist
+                        }
+                    } else {
+                        // From account cannot afford this transfer
+                    }
+                } else {
+                    // From account does not exist
+                }
+            }
+        };
+    }
+
+    chain.mine_block(data);
+    Ok(JsValue::from_serde(&chain)?)
 }
 
 // #[wasm_bindgen]

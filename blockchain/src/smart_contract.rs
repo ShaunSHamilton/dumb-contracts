@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct SmartContract {
     pub id: Option<u64>,
     pub base_account: String,
-    pub byte_code: Vec<usize>,
+    pub byte_code: Vec<u8>,
 }

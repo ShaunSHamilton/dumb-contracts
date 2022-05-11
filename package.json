@@ -1,17 +1,20 @@
 {
-  "name": "test",
+  "name": "dumb-contracts",
   "version": "1.0.0",
   "description": "The most simple and low-level implementation of a blockchain with smart contracts.",
-  "main": "node/index.js",
+  "main": "server/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/ShaunSHamilton/dumb-contracts.git"
   },
   "scripts": {
-    "build:sc": "wasm-pack build dumb-contract --target nodejs",
+    "build": "wasm-pack build --target nodejs",
     "build:blockchain": "wasm-pack build blockchain --target nodejs",
-    "start": "node node/index.js",
-    "deploy": "node node/deploy.js"
+    "deploy": "node node/deploy.js",
+    "client": "serve -s client",
+    "server": "node server/index.js",
+    "node": "node node/index.js",
+    "add-address": "node node/add-address.js"
   },
   "keywords": [
     "Rust",
@@ -20,10 +23,13 @@
     "smart contract"
   ],
   "author": "Shaun Hamilton <shauhami020@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "web3": "^1.7.3",
+    "logover": "^1.1.2",
     "ws": "^8.5.0"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "serve": "^13.0.2"
+  }
 }
