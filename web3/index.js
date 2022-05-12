@@ -37,7 +37,7 @@ export default class Web3 {
       });
       return (await response.json()).result;
     } catch (err) {
-      console.log(err);
+      error(err);
     }
   }
   // Init rpc with given IDL
@@ -67,7 +67,38 @@ export default class Web3 {
       });
       return (await response.json()).result;
     } catch (err) {
-      console.log(err);
+      console.error(err);
+    }
+  }
+  async transfer(to, amount) {
+    try {
+      const response = await fetch(`${this.provider.href}get-balance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ address: address || this.address }),
+      });
+      return (await response.json()).result;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  createIDL(wasmJs, id) {
+    try {
+      const entries = Object.entries(wasmJs);
+      const functions = entries.filter(([_, val]) => typeof val === "function");
+      const idl = functions.reduce((acc, [key, func]) => {
+        acc.instructions.push({
+          handle: key,
+          args: func.length,
+        });
+        return acc;
+      }, {});
+      idl.id = id;
+      return idl;
+    } catch (err) {
+      console.error(err);
     }
   }
 }

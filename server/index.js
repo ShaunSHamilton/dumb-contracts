@@ -5,7 +5,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import logover, { debug, error, info, warn } from "logover";
 
-logover({ level: "debug" });
+logover({ level: "debug", trace: ["debug", "info", "warn", "error"] });
 
 const CONNECTED_NODES = [];
 

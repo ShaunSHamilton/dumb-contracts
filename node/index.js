@@ -4,7 +4,7 @@ import { contract } from "./contract.js";
 import { getBalance } from "./utils.js";
 import mine from "./mine.js";
 
-logover({ level: "debug" });
+logover({ level: "debug", trace: ["debug", "info", "warn", "error"] });
 
 const web3 = new Web3("http://localhost:3030");
 
