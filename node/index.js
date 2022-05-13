@@ -3,6 +3,7 @@ import Web3 from "../web3/index.js";
 import { contract } from "./contract.js";
 import { getBalance } from "./utils.js";
 import mine from "./mine.js";
+import { watch } from "fs";
 
 logover({ level: "debug", trace: ["debug", "info", "warn", "error"] });
 
@@ -54,11 +55,37 @@ async function handleEvent(event, data, requestId) {
   events?.[event]?.(data, requestId);
 }
 
+let timesTransactionsChanged = 0;
+
 // If `m` is pressed while the program is running, mine a new block
 process.stdin.on("data", async (data) => {
   if (data.toString().trim() === "m") {
     info("Mining a new block...");
     await mine();
     info("New block mined!");
+    timesTransactionsChanged = 0;
   }
+});
+
+// Watch for changes to `transactions.json`.
+// If `transactions.json` changes 4 times, mine a new block.
+// If `transactions.json` has changed at least 2 times, and 120 seconds have passed, mine a new block.
+
+const interval = setInterval(async () => {
+  if (timesTransactionsChanged >= 2) {
+    await mine();
+    timesTransactionsChanged = 0;
+  }
+}, 120 * 1000);
+
+watch("./transactions.json", { interval: 1000 }, async () => {
+  const transactions = await readFile("./transactions.json", "utf8");
+  const transactionsCount = JSON.parse(transactions).length;
+  if (transactionsCount >= 4) {
+    info("Mining a new block...");
+    await mine();
+    info("New block mined!");
+    timesTransactionsChanged = 0;
+  }
+  timesTransactionsChanged++;
 });

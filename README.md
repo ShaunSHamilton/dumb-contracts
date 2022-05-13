@@ -23,7 +23,7 @@ npm run node
 ## Add an Account
 
 ```bash
-npm run add-address -- <account_address>
+fcc account create
 ```
 
 ## Build a Smart Contract
@@ -35,11 +35,11 @@ npm run build -- <path_to_rust_lib>
 ## Deploy a Contract
 
 ```bash
-npm run deploy -- <account_address> <path_to_wasm_file>
+fcc deploy <account_address> <path_to_smart_contract_lib>
 ```
 
 ## Airdrop to an Account
 
 ```bash
-npm run airdrop -- <account_address> <amount>
+fcc airdrop <account_address> <amount>
 ```
