@@ -10,7 +10,7 @@ use std::{collections::HashMap, fs, io::Write};
 ///
 /// ## Examples
 ///
-/// $ fcc account create
+/// $ fcc account create shaun
 /// $ fcc account get shaun
 /// $ fcc deploy shaun ./path-to-contract
 /// $ fcc airdrop shaun 100
@@ -91,7 +91,7 @@ pub struct Config {
 #[derive(Debug, Subcommand)]
 pub enum AccountCommand {
     #[clap(name = "create", about = "Create a new account.")]
-    Create,
+    Create(Create),
     #[clap(name = "get", about = "Get an account.")]
     Get(Get),
 }
@@ -110,6 +110,12 @@ pub struct Set {
     property: String,
     /// The value to set the configuration option to.
     value: String,
+}
+
+#[derive(Debug, Args)]
+pub struct Create {
+    /// The seed phrase to use to create the account.
+    pub seed: String,
 }
 
 #[derive(Debug, Args)]
@@ -149,10 +155,14 @@ async fn main() -> Result<(), Error> {
     let args = Cli::parse();
     let result = match args.command {
         Command::Account(account) => match account.command {
-            AccountCommand::Create => {
+            AccountCommand::Create(create) => {
                 println!("Creating account...");
+
+                let mut map = HashMap::new();
+                map.insert("seed", create.seed);
                 let response = client
-                    .get(format!("{}/create-account", network_url))
+                    .post(format!("{}/create-account", network_url))
+                    .json(&map)
                     .send()
                     .await;
 
@@ -305,9 +315,11 @@ async fn main() -> Result<(), Error> {
     }
 }
 
+const CONFIG_FILE: &str = "./fcc-config.json";
+
 fn get_config_option(config_option: &ConfigGet) -> Result<String, std::io::Error> {
-    // Read the config file located at `./config.json`
-    match fs::read_to_string("./config.json") {
+    // Read the config file
+    match fs::read_to_string(CONFIG_FILE) {
         Ok(config_file) => {
             let config: ConfigOptions = serde_json::from_str(&config_file).unwrap();
 
@@ -328,12 +340,12 @@ fn get_config_option(config_option: &ConfigGet) -> Result<String, std::io::Error
 }
 
 fn set_config_option(config_option: &Set) -> Result<(), std::io::Error> {
-    // Write the config file located at `./config.json`
+    // Write the config file
     let mut config = ConfigOptions {
         address: "".to_string(),
         network: "".to_string(),
     };
-    if let Ok(config_file) = fs::read_to_string("./config.json") {
+    if let Ok(config_file) = fs::read_to_string(CONFIG_FILE) {
         let existing_options: ConfigOptions = serde_json::from_str(&config_file).unwrap();
         config = existing_options;
     }
@@ -344,7 +356,7 @@ fn set_config_option(config_option: &Set) -> Result<(), std::io::Error> {
         _ => println!("Error: Invalid config option"),
     };
 
-    let mut config_file = fs::File::create("./config.json")?;
+    let mut config_file = fs::File::create(CONFIG_FILE)?;
     let config_string = serde_json::to_string(&config).unwrap();
     config_file.write_all(config_string.as_bytes()).unwrap();
 

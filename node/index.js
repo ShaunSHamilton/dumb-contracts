@@ -4,6 +4,11 @@ import { contract } from "./contract.js";
 import { getBalance } from "./utils.js";
 import mine from "./mine.js";
 import { watch } from "fs";
+import { readFile } from "fs/promises";
+import { createAccount, getAccount } from "./account.js";
+import { deploy } from "./deploy.js";
+import { airdrop } from "./airdrop.js";
+import { transfer, transact } from "./transactions.js";
 
 logover({ level: "debug", trace: ["debug", "info", "warn", "error"] });
 
@@ -44,6 +49,61 @@ const events = {
     ws.send(
       JSON.stringify({
         event: "get-balance-result",
+        data: { result },
+        requestId,
+      })
+    );
+  },
+  "create-account": async (data, requestId) => {
+    const { seed } = JSON.parse(data);
+    const result = await createAccount(seed);
+    ws.send(
+      JSON.stringify({
+        event: "create-account-result",
+        data: { result },
+        requestId,
+      })
+    );
+  },
+  "get-account": async (data, requestId) => {
+    const { address } = JSON.parse(data);
+    const result = await getAccount(address);
+    ws.send(
+      JSON.stringify({
+        event: "get-account-result",
+        data: { result },
+        requestId,
+      })
+    );
+  },
+  deploy: async (data, requestId) => {
+    const { address, byteCode } = JSON.parse(data);
+    const result = await deploy(address, byteCode);
+    ws.send(
+      JSON.stringify({
+        event: "deploy-result",
+        data: { result },
+        requestId,
+      })
+    );
+  },
+  airdrop: async (data, requestId) => {
+    const { address, amount } = JSON.parse(data);
+    const result = await airdrop(address, amount);
+    ws.send(
+      JSON.stringify({
+        event: "airdrop-result",
+        data: { result },
+        requestId,
+      })
+    );
+  },
+  transfer: async (data, requestId) => {
+    const { from, to, amount } = JSON.parse(data);
+    const result = await transact(transfer(from, to, amount));
+    ws.send(
+      JSON.stringify({
+        event: "transfer-result",
         data: { result },
         requestId,
       })

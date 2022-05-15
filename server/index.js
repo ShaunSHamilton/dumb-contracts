@@ -24,71 +24,103 @@ async function handleRequest(req) {
   });
 }
 
+async function subscribeToEvent(event, requestId) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Timeout"));
+    }, 30000);
+    CONNECTED_NODES.forEach((node) => {
+      node.on("message", (rawData) => {
+        const message = JSON.parse(rawData);
+        if (message.event === event && message.requestId === requestId) {
+          clearTimeout(timeout);
+          resolve(message.data.result);
+        }
+      });
+    });
+  });
+}
+
+const requests = {
+  "/call-smart-contract": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    // Get the body
+    const body = await handleRequest(req);
+    broadcast("call-smart-contract", body, req.id);
+    // Await node response with request id
+    const response = await subscribeToEvent(
+      "call-smart-contract-result",
+      req.id
+    );
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/get-balance": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("get-balance", body, req.id);
+    // Await node response with request id
+    const response = await subscribeToEvent("get-balance-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/create-account": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("create-account", body, req.id);
+    const response = await subscribeToEvent("create-account-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/get-account": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("get-account", body, req.id);
+    const response = await subscribeToEvent("get-account-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/deploy": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("deploy", body, req.id);
+    const response = await subscribeToEvent("deploy-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/airdrop": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("airdrop", body, req.id);
+    const response = await subscribeToEvent("airdrop-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+  "/transfer": async (req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const body = await handleRequest(req);
+
+    broadcast("transfer", body, req.id);
+    const response = await subscribeToEvent("transfer-result", req.id);
+    debug("Got response:", response);
+    return res.end(JSON.stringify({ result: response }));
+  },
+};
+
 const server = http.createServer(async (req, res) => {
-  // res.setHeader("Access-Control-Allow-Origin", "*");
-  // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3030");
-  // res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Allow-Credentials", true);
 
   const requestId = Date.now();
-  let body = "";
-  let response = "";
-  switch (req.url) {
-    case "/call-smart-contract":
-      res.writeHead(200, { "Content-Type": "application/json" });
-      // Get the body
-      body = await handleRequest(req);
-      broadcast("call-smart-contract", body, requestId);
-      // Await node response with request id
-      response = await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("Timeout"));
-        }, 30000);
-        CONNECTED_NODES.forEach((node) => {
-          node.on("message", (rawData) => {
-            const message = JSON.parse(rawData);
-            if (
-              message.event === "call-smart-contract-result" &&
-              message.requestId === requestId
-            ) {
-              clearTimeout(timeout);
-              resolve(message.data.result);
-            }
-          });
-        });
-      });
-      debug("Got response:", response);
-      return res.end(JSON.stringify({ result: response }));
-    case "/get-balance":
-      res.writeHead(200, { "Content-Type": "application/json" });
-      body = await handleRequest(req);
+  req.id = requestId;
+  const outcome = requests?.[req.url]?.(req, res);
 
-      broadcast("get-balance", body, requestId);
-      // Await node response with request id
-      response = await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("Timeout"));
-        }, 5000);
-        CONNECTED_NODES.forEach((node) => {
-          node.on("message", (rawData) => {
-            const message = JSON.parse(rawData);
-            if (
-              message.event === "get-balance-result" &&
-              message.requestId === requestId
-            ) {
-              clearTimeout(timeout);
-              resolve(message.data.result);
-            }
-          });
-        });
-      });
-      debug("Got response:", response);
-      return res.end(JSON.stringify({ result: response }));
-    default:
-      // Do nothing
-      break;
-  }
+  if (outcome) return;
 
   const baseToClient = dirname("");
   let filePath = join(baseToClient, req.url);
